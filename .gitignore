@@ -1,0 +1,15 @@
+venv
+/__pycache__/
+__pycache__
+*/__pycache__
+media
+.env
+.DS_Store
+.idea/
+*.pyc
+*.xlsx
+.python-version
+.devdbrc
+.vscode
+.python-version
+.cursor/

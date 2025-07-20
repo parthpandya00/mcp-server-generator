@@ -1,0 +1,4 @@
+# requirements-dev.txt
+pytest
+pytest-asyncio
+respx # A utility for mocking out httpx requests

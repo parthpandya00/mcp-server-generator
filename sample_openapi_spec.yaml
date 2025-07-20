@@ -1,0 +1,87 @@
+openapi: 3.0.3
+info:
+  title: Order Processing Service (Pass-Through Auth)
+  version: 2.0.0
+  description: An MCP service that enriches order data by calling multiple internal APIs.
+
+paths:
+  /orders/{orderId}/details:
+    get:
+      summary: Get full, enriched details for a specific order
+      operationId: get_enriched_order_details
+      tags:
+        - Orders
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The unique ID of the order to fetch.
+      security:
+        - InternalApiKeyAuth: []
+
+      # --- ADDED THIS SECTION ---
+      responses:
+        '200':
+          description: "Successful Response. Returns the confirmation from the final notification step."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  notification_id:
+                    type: string
+                    example: "notif-xyz-789"
+        '401':
+          description: "Unauthorized. The required X-Internal-API-Key header is missing or invalid."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: "Not Found. The initial order lookup failed for the given orderId."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: "Internal Server Error. A failure occurred in a downstream service or during data processing."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      # --- END ADDED SECTION ---
+
+      x-mcp-source:
+        type: http
+        steps:
+          - step_id: fetch_order
+            method: get
+            url: "http://internal-api.svc/orders/${path_params.orderId}"
+          - step_id: get_product_details
+            method: get
+            url: "http://internal-api.svc/products/${fetch_order.product_id}"
+
+components:
+  # --- ADDED THIS SECTION FOR REUSABLE SCHEMAS ---
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: A message describing the error.
+      required:
+        - error
+  # --- END ADDED SECTION ---
+
+  securitySchemes:
+    InternalApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Internal-API-Key
+      description: "API Key for the internal downstream services. The client must provide this key in their request to the MCP."

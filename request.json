@@ -1,0 +1,19 @@
+{
+  "openapi_spec": {
+    "openapi": "3.0.3",
+    "info": { "title": "Order Processing Service" },
+    "paths": { "/orders/{order_id}/details": { "get": {
+      "summary": "Get enriched order details", "operationId": "get_enriched_order_details",
+      "parameters": [{ "name": "order_id", "in": "path", "required": true, "schema": { "type": "string" }}],
+      "security": [{ "InternalApiKeyAuth": [] }],
+      "x-mcp-source": { "type": "http", "steps": [
+        { "step_id": "fetch_order", "method": "get", "url": "http://host.docker.internal:8001/orders/${path_params.order_id}" },
+        { "step_id": "get_product_details", "method": "get", "url": "http://host.docker.internal:8001/products/${fetch_order.product_id}" }
+      ]}
+    }}},
+    "components": { "securitySchemes": {
+      "InternalApiKeyAuth": { "type": "apiKey", "in": "header", "name": "X-Internal-API-Key" }
+    }}
+  },
+  "direct_credentials": {}
+}
