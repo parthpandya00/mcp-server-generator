@@ -16,14 +16,19 @@ ENV VAULT_ADDR="{{ auth_source_config.vault_address }}"
 {% for key, value in direct_secrets.items() %}
 ENV {{ key.upper() }}="{{ value }}"
 {% endfor %}
-ENV MCP_CONFIG='{{ mcp_config_json }}'
+
+# Point to the config file instead of inline JSON
+ENV MCP_CONFIG_FILE="/usr/src/app/mcp_config.json"
 
 # --- Application Setup ---
-# CORRECTED: Copy the entire package directory
+# Copy the config file first
+COPY mcp_config.json /usr/src/app/mcp_config.json
+
+# Copy the entire package directory
 COPY ./src/generic_mcp_server/ ./generic_mcp_server/
 RUN pip install --no-cache-dir -r ./generic_mcp_server/requirements.txt
 
 EXPOSE ${PORT}
 
-# CORRECTED: Run the app as a module to fix relative imports
+# Run the app as a module to fix relative imports
 CMD ["python", "-u", "-m", "generic_mcp_server.run"]

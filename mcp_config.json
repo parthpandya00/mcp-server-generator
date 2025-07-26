@@ -1,0 +1,125 @@
+{
+  "operations": {
+    "list_emails": {
+      "path": "/me/messages",
+      "method": "get",
+      "source_config": {
+        "type": "http",
+        "steps": [
+          {
+            "step_id": "fetch_emails",
+            "method": "get",
+            "url": "https://graph.microsoft.com/v1.0/me/messages?$top=5"
+          }
+        ]
+      },
+      "auth_scheme_name": "BearerAuth",
+      "parameters": []
+    },
+    "send_email": {
+      "path": "/me/sendMail",
+      "method": "post",
+      "source_config": {
+        "type": "http",
+        "steps": [
+          {
+            "step_id": "send_downstream",
+            "method": "post",
+            "url": "https://graph.microsoft.com/v1.0/me/sendMail",
+            "body": {
+              "message": {
+                "subject": "${incoming_request_body.message.subject}",
+                "body": {
+                  "contentType": "${incoming_request_body.message.body.contentType}",
+                  "content": "${incoming_request_body.message.body.content}"
+                },
+                "toRecipients": "${incoming_request_body.message.toRecipients}"
+              },
+              "saveToSentItems": "${incoming_request_body.saveToSentItems}"
+            }
+          }
+        ]
+      },
+      "auth_scheme_name": "BearerAuth",
+      "parameters": [],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SendMailBody"
+            }
+          }
+        }
+      }
+    }
+  },
+  "security_schemes": {
+    "BearerAuth": {
+      "type": "http",
+      "scheme": "bearer"
+    }
+  },
+  "components": {
+    "schemas": {
+      "EmailAddress": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string"
+          }
+        }
+      },
+      "Recipient": {
+        "type": "object",
+        "properties": {
+          "emailAddress": {
+            "$ref": "#/components/schemas/EmailAddress"
+          }
+        }
+      },
+      "MessageBody": {
+        "type": "object",
+        "properties": {
+          "contentType": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          }
+        }
+      },
+      "Message": {
+        "type": "object",
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "body": {
+            "$ref": "#/components/schemas/MessageBody"
+          },
+          "toRecipients": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Recipient"
+            }
+          }
+        }
+      },
+      "SendMailBody": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "$ref": "#/components/schemas/Message"
+          },
+          "saveToSentItems": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      }
+    }
+  }
+}
